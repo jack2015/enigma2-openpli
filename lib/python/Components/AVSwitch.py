@@ -162,6 +162,18 @@ def InitAVSwitch():
 	iAVSwitch.setInput("ENCODER") # init on startup
 	SystemInfo["ScartSwitch"] = eAVSwitch.getInstance().haveScartSwitch()
 
+	def readChoices(procx, choices, default):
+		try:
+			with open(procx, "r") as myfile:
+				procChoices = myfile.read().strip()
+		except:
+			procChoices = ""
+		if procChoices:
+			choiceslist = procChoices.split(" ")
+			choices = [(item, _(item)) for item in choiceslist]
+			default = choiceslist[0]
+		return (choices, default)
+
 	if SystemInfo["CanDownmixAC3"]:
 		def setAC3Downmix(configElement):
 			with open("/proc/stb/audio/ac3", "w") as f:
@@ -244,7 +256,7 @@ def InitAVSwitch():
 		config.av.osd_alpha = ConfigSlider(default=255, limits=(0, 255))
 		config.av.osd_alpha.addNotifier(setAlpha)
 
-	if os.path.exists("/proc/stb/vmpeg/0/pep_scaler_sharpness"):
+	if SystemInfo["HasScaler_sharpness"]:
 		def setScaler_sharpness(config):
 			myval = int(config.value)
 			try:
@@ -331,6 +343,89 @@ def InitAVSwitch():
 			f.close()
 		config.av.hdmi_audio_source = ConfigSelection(default="pcm", choices=[("pcm", "PCM"), ("spdif", "SPDIF")])
 		config.av.hdmi_audio_source.addNotifier(setHDMIAudioSource)
+
+	if SystemInfo["HasBypassEdidChecking"]:
+		def setHasBypassEdidChecking(configElement):
+			with open(SystemInfo["HasBypassEdidChecking"], "w") as fp:
+				fp.write("00000001" if configElement.value else "00000000")
+		config.av.bypassEdidChecking = ConfigYesNo(default=False)
+		config.av.bypassEdidChecking.addNotifier(setHasBypassEdidChecking)
+
+	if SystemInfo["HasColorspace"]:
+		def setHaveColorspace(configElement):
+			with open(SystemInfo["HasColorspace"], "w") as fp:
+				fp.write(configElement.value)
+		if SystemInfo["HasColorspaceSimple"]:
+			choices = [("Edid(Auto)", "auto"), ("Hdmi_Rgb", "RGB"), ("444", "YCbCr 4:4:4"), ("422", "YCbCr 4:2:2"), ("420", "YCbCr 4:2:0")]
+			default = "Edid(Auto)"
+		else:
+			choices = [("auto", "auto"), ("rgb", "RGB"), ("420", "4:2:0"), ("422", "4:2:2"), ("444", "4:4:4")]
+			default = "auto"
+		f = "/proc/stb/video/hdmi_colorspace_choices"
+		if os.path.exists(f):
+			(choices, default) = readChoices(f, choices, default)
+		config.av.hdmicolorspace = ConfigSelection(choices=choices, default=default)
+		config.av.hdmicolorspace.addNotifier(setHaveColorspace)
+
+	if SystemInfo["HasColordepth"]:
+		def setHaveColordepth(configElement):
+			with open(SystemInfo["HasColordepth"], "w") as fp:
+				fp.write(configElement.value)
+		choices = [("auto", "auto"), ("8bit", "8bit"), ("10bit", "10bit"), ("12bit", "12bit")]
+		default = "auto"
+		f = "/proc/stb/video/hdmi_colordepth_choices"
+		if os.path.exists(f):
+			(choices, default) = readChoices(f, choices, default)
+		config.av.hdmicolordepth = ConfigSelection(choices=choices, default=default)
+		config.av.hdmicolordepth.addNotifier(setHaveColordepth)
+
+	if SystemInfo["HasHDMIpreemphasis"]:
+		def setHDMIpreemphasis(configElement):
+			with open(SystemInfo["HasHDMIpreemphasis"], "w") as fp:
+				fp.write("on" if configElement.value else "off")
+		config.av.hdmipreemphasis = ConfigYesNo(default=False)
+		config.av.hdmipreemphasis.addNotifier(setHDMIpreemphasis)
+
+	if SystemInfo["HasColorimetry"]:
+		def setColorimetry(configElement):
+			with open(SystemInfo["HasColorimetry"], "w") as fp:
+				fp.write(configElement.value)
+		config.av.hdmicolorimetry = ConfigSelection(default="auto", choices=[("auto", _("auto")), ("bt2020ncl", "BT 2020 NCL"), ("bt2020cl", "BT 2020 CL"), ("bt709", "BT 709")])
+		config.av.hdmicolorimetry.addNotifier(setColorimetry)
+
+	if SystemInfo["HasHdrType"]:
+		def setHdmiHdrType(configElement):
+			with open(SystemInfo["HasHdrType"], "w") as fp:
+				fp.write(configElement.value)
+		config.av.hdmihdrtype = ConfigSelection(default="auto", choices={"auto": _("auto"), "none": "SDR", "hdr10": "HDR10", "hlg": "HLG", "dolby": "Dolby Vision"})
+		config.av.hdmihdrtype.addNotifier(setHdmiHdrType)
+
+	if SystemInfo["HDRSupport"]:
+		def setHlgSupport(configElement):
+			with open("/proc/stb/hdmi/hlg_support", "w") as fp:
+				fp.write(configElement.value)
+		config.av.hlg_support = ConfigSelection(default="auto(EDID)",
+			choices=[("auto(EDID)", _("auto")), ("yes", _("force enabled")), ("no", _("force disabled"))])
+		config.av.hlg_support.addNotifier(setHlgSupport)
+
+		def setHdr10Support(configElement):
+			with open("/proc/stb/hdmi/hdr10_support", "w") as fp:
+				fp.write(configElement.value)
+		config.av.hdr10_support = ConfigSelection(default="auto(EDID)",
+			choices=[("auto(EDID)", _("auto")), ("yes", _("force enabled")), ("no", _("force disabled"))])
+		config.av.hdr10_support.addNotifier(setHdr10Support)
+
+		def setDisable12Bit(configElement):
+			with open("/proc/stb/video/disable_12bit", "w") as fp:
+				fp.write("on" if configElement.value else "off")
+		config.av.allow_12bit = ConfigYesNo(default=False)
+		config.av.allow_12bit.addNotifier(setDisable12Bit)
+
+		def setDisable10Bit(configElement):
+			with open("/proc/stb/video/disable_10bit", "w") as fp:
+				fp.write("on" if configElement.value else "off")
+		config.av.allow_10bit = ConfigYesNo(default=False)
+		config.av.allow_10bit.addNotifier(setDisable10Bit)
 
 	def setVolumeStepsize(configElement):
 		eDVBVolumecontrol.getInstance().setVolumeSteps(int(configElement.value))
