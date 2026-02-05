@@ -1,8 +1,7 @@
 from Components.Converter.Converter import Converter
 from Components.Element import cached
-from Poll import Poll
-from os.path import exists, isfile
-from Components.About import about
+from Components.Converter.Poll import Poll
+import os
 
 class VtiTempFan(Poll, Converter, object):
 	TEMPINFO = 0
@@ -45,7 +44,7 @@ class VtiTempFan(Poll, Converter, object):
 		mark = str("\xc2\xb0")
 		sensor_info = None
 		temperature = 0
-		if exists("/proc/stb/sensors/temp0/value"):
+		if os.path.exists("/proc/stb/sensors/temp0/value"):
 			f = open("/proc/stb/sensors/temp0/value", "r")
 			tempinfo = str(f.readline().strip())
 			f.close()
@@ -53,7 +52,7 @@ class VtiTempFan(Poll, Converter, object):
 				tempinfo = _("Temp:") + tempinfo + mark + "C"
 				return tempinfo
 
-		elif exists("/proc/stb/fp/temp_sensor"):
+		elif os.path.exists("/proc/stb/fp/temp_sensor"):
 			f = open("/proc/stb/fp/temp_sensor", "r")
 			tempinfo = str(f.readline().strip())
 			f.close()
@@ -61,7 +60,7 @@ class VtiTempFan(Poll, Converter, object):
 				tempinfo = _("Temp:") + tempinfo + mark + "C"
 				return tempinfo
 
-		elif exists("/proc/stb/sensors/temp/value"):
+		elif os.path.exists("/proc/stb/sensors/temp/value"):
 			f = open("/proc/stb/sensors/temp/value", "r")
 			tempinfo = str(f.readline().strip())
 			f.close()
@@ -69,7 +68,7 @@ class VtiTempFan(Poll, Converter, object):
 				tempinfo = _("Temp:") + tempinfo + mark + "C"
 				return tempinfo
 
-		elif exists('/proc/stb/fp/temp_sensor_avs'):
+		elif os.path.exists('/proc/stb/fp/temp_sensor_avs'):
 			f = open('/proc/stb/fp/temp_sensor_avs', 'r')
 			tempinfo = str(f.readline().strip())
 			f.close()
@@ -77,7 +76,7 @@ class VtiTempFan(Poll, Converter, object):
 				tempinfo = _("Temp:") + tempinfo + mark + "C"
 				return tempinfo
 
-		elif exists('/proc/hisi/msp/pm_cpu'):
+		elif os.path.exists('/proc/hisi/msp/pm_cpu'):
 			with open("/proc/hisi/msp/pm_cpu") as fp:
 				tempinfo = search('temperature = (\d+) degree', fp.read()).group(1)
 				tempinfo = str(tempinfo.strip())
@@ -85,7 +84,7 @@ class VtiTempFan(Poll, Converter, object):
 					tempinfo = _("Temp:") + tempinfo + mark + "C"
 					return tempinfo
 
-		elif isfile("/sys/devices/virtual/thermal/thermal_zone0/temp"):
+		elif os.path.isfile("/sys/devices/virtual/thermal/thermal_zone0/temp"):
 			with open("/sys/devices/virtual/thermal/thermal_zone0/temp") as fp:
 				temperature = int(fp.read().strip())/1000
 				if temperature > 0:
@@ -94,18 +93,31 @@ class VtiTempFan(Poll, Converter, object):
 
 		return tempinfo
 
+	def getFlashMemory(self, folder='/'):
+		try:
+			diskSpace = os.statvfs(folder)
+			available = float(diskSpace.f_bsize * diskSpace.f_bavail)
+			return round(float((available) / (1024.0*1024.0)),2)
+		except:
+			pass
+		return None
+
 	def fanfile(self):
 		fan = None
-		if exists("/proc/stb/fp/fan_speed"):
+		if os.path.exists("/proc/stb/fp/fan_speed"):
 			f = open("/proc/stb/fp/fan_speed", "rb")
 			fan = str(f.readline().strip())
 			f.close()
 			if fan:
 				return _("Fan:") + fan
-		return _("Flash: %s MB") % about.getFlashMemory()
+		fm = float(self.getFlashMemory())
+		if fm > 1024:
+			return _("Flash: %s GB") % str(round(float(fm / 1024.0),1))
+		else:
+			return _("Flash: %s MB") % str(round(fm,1))
 
 	def getCamName(self):
-		if exists("/etc/CurrentBhCamName"):
+		if os.path.exists("/etc/CurrentBhCamName"):
 			with open("/etc/CurrentBhCamName") as fp:
 				for line in fp:
 					line = line.lower()
@@ -135,7 +147,7 @@ class VtiTempFan(Poll, Converter, object):
 						return "CI"
 					elif "interface" in line:
 						return "CI"
-		elif exists("/etc/init.d/softcam"):
+		elif os.path.exists("/etc/init.d/softcam"):
 			with open("/etc/init.d/softcam") as fp:
 				for line in fp:
 					line = line.lower()

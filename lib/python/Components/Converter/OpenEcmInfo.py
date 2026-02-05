@@ -1,10 +1,10 @@
-from Poll import Poll
+from Components.Converter.Poll import Poll
 from Components.Converter.Converter import Converter
 from enigma import eTimer, iPlayableService, iServiceInformation
 from Components.Element import cached
 
 try:
-	from bitratecalc import eBitrateCalculator
+	from Components.Converter.bitratecalc import eBitrateCalculator
 	ISBITRATE = True
 except ImportError:
 	ISBITRATE = False
