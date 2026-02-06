@@ -4,10 +4,6 @@ from Components.Converter.Poll import Poll
 import os
 
 class VtiTempFan(Poll, Converter, object):
-	TEMPINFO = 0
-	FANINFO = 1
-	ALL = 2
-	CAMNAME = 3
 
 	def __init__(self, type):
 		Poll.__init__(self)
@@ -15,6 +11,11 @@ class VtiTempFan(Poll, Converter, object):
 		self.type = type
 		self.poll_interval = 5000
 		self.poll_enabled = True
+	    self.TEMPINFO = 0
+	    self.FANINFO = 1
+	    self.ALL = 2
+	    self.CAMNAME = 3
+
 		if type == "TempInfo":
 			self.type = self.TEMPINFO
 		elif type == "FanInfo":
