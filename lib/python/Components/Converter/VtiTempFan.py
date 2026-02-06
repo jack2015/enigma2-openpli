@@ -11,10 +11,10 @@ class VtiTempFan(Poll, Converter, object):
 		self.type = type
 		self.poll_interval = 5000
 		self.poll_enabled = True
-	    self.TEMPINFO = 0
-	    self.FANINFO = 1
-	    self.ALL = 2
-	    self.CAMNAME = 3
+		self.TEMPINFO = 0
+		self.FANINFO = 1
+		self.ALL = 2
+		self.CAMNAME = 3
 
 		if type == "TempInfo":
 			self.type = self.TEMPINFO
